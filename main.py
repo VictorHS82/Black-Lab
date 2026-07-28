@@ -1,34 +1,37 @@
 import discord
 import os
 from discord.ext import commands
-from cogs.utilidades import setup
 from dotenv import load_dotenv
-class Soul(commands.Bot):
-    def __init__(self):
-        intents=discord.Intents.all()
-        super().__init__(command_prefix="!",
-                         intents=intents
-        )
-
-    async def setup_hook(self):
-         for arquivo in os.listdir("./cogs"):
-            if arquivo.endswith(".py"):
-                await self.load_extension(
-                    f"cogs.{arquivo[:-3]}"
-                )
-    
-    async def on_ready(self):
-        print(f'Bot {self.user} logado')        
 
 load_dotenv()
-token: str | None = os.getenv("TOKEN_RUN_BOT")
+
+token = os.getenv("TOKEN_RUN_BOT")
 if token is None:
     raise ValueError("Cadê o token?")
 
-bot = Soul()
+guild_id = os.getenv("GUILD_ID")
+if guild_id is None:
+    raise ValueError("Cadê o GUILD_ID?")
+GUILD_ID = int(guild_id)
 
-@bot.tree.command(name="ping", description="Responde com Saí fora!")
-async def olamundo(interaction: discord.Interaction):
-    await interaction.response.send_message("Saí fora!")
+class Soul(commands.Bot):
+    def __init__(self):
+        intents = discord.Intents.all()
+        super().__init__(command_prefix=["#","!"], intents=intents)
+        self.local_guild = discord.Object(id=GUILD_ID)
+
+    async def setup_hook(self):
+        print("Tentando carregar cogs de", os.getcwd())
+        for arquivo in os.listdir("./cogs"):
+            if arquivo.endswith(".py"):
+                print("Carregando", arquivo)
+                await self.load_extension(f"cogs.{arquivo[:-3]}")
+
+        await self.tree.sync(guild=self.local_guild)
+        await self.tree.sync()
+    async def on_ready(self):
+        print(f'Bot {self.user} logado')        
+
+bot = Soul()
 
 bot.run(token)
