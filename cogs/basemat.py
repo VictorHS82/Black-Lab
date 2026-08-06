@@ -32,11 +32,11 @@ class Basemat(commands.Cog):
                 await message.reply("Uso: !a<dados>, por exemplo !ad6")
                 return
 
-            if not await self.assimilador.infect(expressao):
+            if not await self.assimilador.verify(expressao):
                 await message.reply("O dado não é assimilável.")
                 return
 
-            resposta = await self.assimilador.genesteal(expressao)
+            resposta = await self.assimilador.changer_manager(expressao)
             await message.reply(str(resposta))
             return
 

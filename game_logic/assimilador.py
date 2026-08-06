@@ -1,9 +1,9 @@
 import re
 
 from game_logic.diceman import Diceman
+from interfaces.changerdice import ChangerDice
 
-
-class Assimilador:
+class Assimilador(ChangerDice):
     def __init__(self, bot):
         self.bot = bot
         self.diceman = Diceman(bot)
@@ -44,19 +44,19 @@ class Assimilador:
             },
         }
 
-    async def genesteal(self, asi_message: str):
-        infected = await self.infect(asi_message)
+    async def changer_manager(self, asi_message: str) -> str:
+        infected = await self.verify(asi_message)
         if not infected:
             return "O dado não é assimilável."
 
         dados = await self.diceman.roll_dice_details(asi_message)
-        return await self.transform(dados)
+        return await self.change(dados)
 
-    async def infect(self, cut_message: str):
+    async def verify(self, cut_message: str) -> bool:
         parasite = r"^(?:\d*d(?:6|10|12))(?:\+(?:\d*d(?:6|10|12)))*$"
         return bool(re.fullmatch(parasite, cut_message))
 
-    async def transform(self, dados):
+    async def change(self, dados: dict) -> str:
         linhas = []
 
         for bloco in dados.get("blocos", []):
