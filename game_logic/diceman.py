@@ -16,9 +16,33 @@ class Diceman(commands.Cog):
         return [parte.strip() for parte in partes if parte.strip()]
 
     async def roll_dice(self, message: str):
+        dados = await self.roll_dice_details(message)
+        if not dados["blocos"]:
+            return "Nenhum dado para rolar."
+
+        partes_texto = []
+        for index, bloco in enumerate(dados["blocos"]):
+            if bloco["kind"] == "dice":
+                texto = f"[{', '.join(str(v) for v in bloco['resultados'])}] {bloco['quantidade']}d{bloco['lados']}"
+            else:
+                texto = str(bloco["valor"])
+
+            if index == 0:
+                partes_texto.append(texto)
+            else:
+                if bloco["kind"] == "modifier":
+                    sinal = "+" if bloco["valor"] >= 0 else "-"
+                    partes_texto.append(f"{sinal} {abs(bloco['valor'])}")
+                else:
+                    sinal = "+" if bloco["valor"] >= 0 else "-"
+                    partes_texto.append(f"{sinal} {texto}")
+
+        return f"{' '.join(partes_texto)} = {dados['total']}"
+
+    async def roll_dice_details(self, message: str):
         grupos = await self.breaking_it_down(message)
         if not grupos:
-            return "Nenhum dado para rolar."
+            return {"blocos": [], "total": 0}
 
         blocos = []
         total = 0
@@ -50,30 +74,12 @@ class Diceman(commands.Cog):
                 })
                 total += valor
 
-        if not blocos:
-            return "Nenhum dado para rolar."
-
-        partes_texto = []
-        for index, bloco in enumerate(blocos):
-            if bloco["kind"] == "dice":
-                texto = f"[{', '.join(str(v) for v in bloco['resultados'])}] {bloco['quantidade']}d{bloco['lados']}"
-            else:
-                valor = bloco["valor"]
-                texto = str(valor)
-
-            if index == 0:
-                partes_texto.append(texto)
-            else:
-                if bloco["kind"] == "modifier":
-                    sinal = "+" if bloco["valor"] >= 0 else "-"
-                    partes_texto.append(f"{sinal} {abs(bloco['valor'])}")
-                else:
-                    sinal = "+" if bloco["valor"] >= 0 else "-"
-                    partes_texto.append(f"{sinal} {texto}")
-
-        return f"{' '.join(partes_texto)} = {total}"
+        return {"blocos": blocos, "total": total}
 
     async def parse_dice(self, token: str):
+        """
+        Divide uma string de dados em elementos para poder rolar os dados.
+        """
         token = token.strip()
         if not token:
             return None
